@@ -1,8 +1,10 @@
 import { assert } from 'chai'
-import func from '../src/func'
+import Normalized from '../src/index'
 
-describe('Func test', () => {
+describe('Normalized test', () => {
   it('should test func', () => {
-    assert(func(1, 1) === 2)
+    const i = Normalized.create()
+    assert.equal(i.ids.length, 0)
+    assert.equal(Object.keys(i.data).length, 0)
   })
 })
