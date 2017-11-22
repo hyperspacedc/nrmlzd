@@ -3,24 +3,30 @@ import { omit } from 'lodash/object'
 import { isPlainObject } from 'lodash/lang'
 
 export default {
-  upsert: (norm, entityOrEntities) => {
+  upsert: (norm, entityOrEntities, { merge } = {}) => {
     const isSingle = isPlainObject(entityOrEntities)
 
     if (isSingle) {
+      const entity = entityOrEntities
+
       return {
-        ids: union(norm.ids, [entityOrEntities.id]),
+        ids: union(norm.ids, [entity.id]),
         data: {
           ...norm.data,
-          [entityOrEntities.id]: entityOrEntities
+          [entity.id]: merge ? mergeIntoExisting(norm, entity) : entity
         }
       }
     }
 
+    const entities = merge
+      ? entityOrEntities.map(entity => mergeIntoExisting(norm, entity))
+      : entityOrEntities
+
     return {
-      ids: union(norm.ids, entityOrEntities.map(({ id }) => id)),
+      ids: union(norm.ids, entities.map(({ id }) => id)),
       data: {
         ...norm.data,
-        ...arrayToMap(entityOrEntities)
+        ...arrayToMap(entities)
       }
     }
   },
@@ -41,7 +47,8 @@ export default {
   toArray: (arg1, arg2) => {
     const { ids, data } = arg2 ? { ids: arg1, data: arg2 } : arg1
     if (!ids || !data) {
-      throw Error('Normalized.toArray: argument error')
+      console.warn('Normalized.toArray: argument error')
+      return []
     }
     return ids.map(id => data[id])
   },
@@ -58,6 +65,9 @@ export default {
     data: {}
   })
 }
+
+const mergeIntoExisting = (norm, item) =>
+  Object.assign({}, norm.data[item.id] || {}, item)
 
 const mapPickIds = (ids, map) =>
   ids.reduce(
